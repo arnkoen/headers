@@ -1,6 +1,11 @@
 /*
+If you are not sure, what this is about, have a look here:
+https://floooh.github.io/2018/06/17/handles-vs-pointers.html
+
 This header is heavily based on the handle implementation of Sepehr Taghdisian (septag@github).
 License: https://github.com/septag/sx#license-bsd-2-clause
+
+//----------------------------------------------
 
 BSD 2-Clause License
 
