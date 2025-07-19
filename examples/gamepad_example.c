@@ -1,5 +1,5 @@
 #define GAMEPAD_IMPL
-#include "gamepad.h"
+#include "../gamepad.h"
 #include <stdio.h>
 
 int main(void) {

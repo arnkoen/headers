@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #define HANDLE_POOL_IMPL
-#include "handle_pool.h"
+#include "../handle_pool.h"
 
 #define TEST(name) \
     do { \

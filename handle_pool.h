@@ -40,10 +40,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdbool.h>
 
-#if !defined(HP_MALLOC) || !defined(HP_FREE)
+#if !defined(HP_ARENA_MALLOC) || !defined(HP_ARENA_FREE)
 #include <stdlib.h>
-#define HP_MALLOC(x) malloc(x)
-#define HP_FREE(x) free(x)
+#define HP_ARENA_MALLOC(x) malloc(x)
+#define HP_ARENA_FREE(x) free(x)
 #endif
 #if !defined(HP_ASSERT)
 #include <assert.h>
@@ -87,9 +87,9 @@ hp_handle hp_handle_at(const hp_pool* pool, int idx);
     ((uint32_t)(_idx) & HANDLE_INDEX_MASK))
 
 void hp_init(hp_pool* pool, int capacity) {
-    pool->dense = (hp_handle*)HP_MALLOC(capacity * sizeof(hp_handle));
+    pool->dense = (hp_handle*)HP_ARENA_MALLOC(capacity * sizeof(hp_handle));
     HP_ASSERT(pool->dense);
-    pool->sparse = (int*)HP_MALLOC(capacity * sizeof(int));
+    pool->sparse = (int*)HP_ARENA_MALLOC(capacity * sizeof(int));
     HP_ASSERT(pool->sparse);
     pool->capacity = capacity;
     hp_reset(pool);
@@ -105,8 +105,8 @@ void hp_reset(hp_pool* pool) {
 
 void hp_destroy(hp_pool* pool) {
     HP_ASSERT(pool);
-    if (pool->dense)  HP_FREE(pool->dense);
-    if (pool->sparse) HP_FREE(pool->sparse);
+    if (pool->dense)  HP_ARENA_FREE(pool->dense);
+    if (pool->sparse) HP_ARENA_FREE(pool->sparse);
 }
 
 bool hp_is_full(const hp_pool* pool) {
