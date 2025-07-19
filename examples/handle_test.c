@@ -1,10 +1,10 @@
+#define HANDLE_POOL_IMPL
+#include "../handle_pool.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
 
-#define HANDLE_POOL_IMPL
-#include "../handle_pool.h"
 
 #define TEST(name) \
     do { \
