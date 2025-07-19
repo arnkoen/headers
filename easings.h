@@ -73,7 +73,8 @@ static inline float ease_out_quart(float t) {
     return 1.0f - t * t * t * t;
 }
 static inline float ease_in_out_quart(float t) {
-    return t < 0.5f ? 8.0f * t * t * t * t : 1.0f - 8.0f * (--t) * t * t * t;
+    float x = t - 1.0f; // Fixes unsequenced modification and access warning
+    return t < 0.5f ? 8.0f * t * t * t * t : 1.0f - 8.0f * (x) * t * t * t;
 }
 
 // Quintic
@@ -85,7 +86,8 @@ static inline float ease_out_quint(float t) {
     return 1.0f + t * t * t * t * t;
 }
 static inline float ease_in_out_quint(float t) {
-    return t < 0.5f ? 16.0f * t * t * t * t * t : 1.0f + 16.0f * (--t) * t * t * t * t;
+    float x = t - 1.0f; // Fixes unsequenced modification and access warning
+    return t < 0.5f ? 16.0f * t * t * t * t * t : 1.0f + 16.0f * (x) * t * t * t * t;
 }
 
 // Sine
