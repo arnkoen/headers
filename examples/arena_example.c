@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main() {
-    arena arena;
+    arena_t arena;
     if (!arena_init(&arena, 1024)) {
         printf("Failed to initialize arena\n");
         return 1;

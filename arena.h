@@ -19,16 +19,16 @@ THIS SOFTWARE IS PROVIDED 'AS-IS', WITHOUT ANY EXPRESS OR IMPLIED WARRANTY. IN N
 #endif
 
 
-typedef struct arena {
+typedef struct arena_t {
     char* buffer;
     size_t capacity;
     size_t offset;
-} arena;
+} arena_t;
 
-int arena_init(arena* arena, size_t capacity);
-void* arena_alloc(arena* arena, size_t size, size_t alignment);
-void arena_reset(arena* arena);
-void arena_free(arena* arena);
+int arena_init(arena_t* arena, size_t capacity);
+void* arena_alloc(arena_t* arena, size_t size, size_t alignment);
+void arena_reset(arena_t* arena);
+void arena_free(arena_t* arena);
 #define arena_alloc_type(arena, T, count) \
     (T*)arena_alloc((arena), sizeof(T) * (count), alignof(T))
 
@@ -36,7 +36,7 @@ void arena_free(arena* arena);
 
 #ifdef ARENA_IMPL
 
-int arena_init(arena* arena, size_t capacity) {
+int arena_init(arena_t* arena, size_t capacity) {
     arena->buffer = (char*)ARENA_MALLOC(capacity);
     if(!arena->buffer) return 0;
     arena->capacity = capacity;
@@ -49,7 +49,7 @@ static size_t _align_forward(size_t ptr, size_t align) {
     return mod == 0 ? ptr : ptr + (align - mod);
 }
 
-void* arena_alloc(arena* arena, size_t size, size_t align) {
+void* arena_alloc(arena_t* arena, size_t size, size_t align) {
     size_t current = (size_t)arena->buffer + arena->offset;
     size_t alignment = align == 0 ? sizeof(void*) : align;
     size_t aligned = _align_forward(current, alignment);
@@ -62,11 +62,11 @@ void* arena_alloc(arena* arena, size_t size, size_t align) {
     return ret;
 }
 
-void arena_reset(arena* arena) {
+void arena_reset(arena_t* arena) {
     arena->offset = 0;
 }
 
-void arena_free(arena* arena) {
+void arena_free(arena_t* arena) {
     ARENA_FREE(arena->buffer);
     arena->buffer = NULL;
     arena->capacity = 0;
