@@ -29,15 +29,30 @@ extern "C" {
 #endif
 
 typedef struct mempool_t {
-    void*  buffer;
+    void* buffer;
     size_t elem_size;
     size_t capacity;
     size_t count;
-    int*   free_list;
+    int* free_list;
     size_t free_count;
 } mempool_t;
 
-static inline int mempool_init(mempool_t* pool, size_t elem_size, size_t capacity) {
+int mempool_init(mempool_t *pool, size_t elem_size, size_t capacity);
+void* mempool_alloc(mempool_t *pool);
+void mempool_free(mempool_t *pool, void* ptr);
+void mempool_reset(mempool_t *pool);
+void mempool_destroy(mempool_t *pool);
+#define mempool_alloc_type(pool, T) ((T*)mempool_alloc(pool))
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // MEMPOOL_H
+
+#ifdef MEMPOOL_IMPL
+
+int mempool_init(mempool_t* pool, size_t elem_size, size_t capacity) {
     pool->elem_size = elem_size;
     pool->capacity = capacity;
     pool->count = 0;
@@ -54,7 +69,7 @@ static inline int mempool_init(mempool_t* pool, size_t elem_size, size_t capacit
     return 1;
 }
 
-static inline void* mempool_alloc(mempool_t* pool) {
+void* mempool_alloc(mempool_t* pool) {
     int idx;
     if (pool->free_count > 0) {
         idx = pool->free_list[--pool->free_count];
@@ -66,19 +81,19 @@ static inline void* mempool_alloc(mempool_t* pool) {
     return (char*)pool->buffer + idx * pool->elem_size;
 }
 
-static inline void mempool_free(mempool_t* pool, void* ptr) {
+void mempool_free(mempool_t* pool, void* ptr) {
     int idx = (int)(((char*)ptr - (char*)pool->buffer) / pool->elem_size);
     if (idx >= 0 && (size_t)idx < pool->capacity) {
         pool->free_list[pool->free_count++] = idx;
     }
 }
 
-static inline void mempool_reset(mempool_t* pool) {
+void mempool_reset(mempool_t* pool) {
     pool->count = 0;
     pool->free_count = 0;
 }
 
-static inline void mempool_destroy(mempool_t* pool) {
+void mempool_destroy(mempool_t* pool) {
     MEMPOOL_FREE(pool->buffer);
     MEMPOOL_FREE(pool->free_list);
     pool->buffer = NULL;
@@ -87,10 +102,4 @@ static inline void mempool_destroy(mempool_t* pool) {
     pool->elem_size = 0;
 }
 
-#define mempool_alloc_type(pool, T) ((T*)mempool_alloc(pool))
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // MEMPOOL_H
+#endif // MEMPOOL_IMPL

@@ -1,4 +1,5 @@
 
+#define MEMPOOL_IMPL
 #include "../mempool.h"
 #include <stdio.h>
 
