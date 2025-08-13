@@ -17,9 +17,11 @@ extern "C" {
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 typedef HMODULE dll_handle;
-#else
+#elif defined(__linux__) // linux
 #include <dlfcn.h>
 typedef void* dll_handle;
+#else
+#error Platform not supported
 #endif
 
 static inline dll_handle dll_open(const char *path) {
@@ -40,9 +42,9 @@ static inline void* dll_symbol(dll_handle handle, const char *symbol) {
 
 static inline void dll_close(dll_handle handle) {
 #if defined(_WIN32)
-    if (handle) FreeLibrary(handle);
+    if (handle)FreeLibrary(handle);
 #else
-    if (handle) dlclose(handle);
+    if (handle)dlclose(handle);
 #endif
 }
 

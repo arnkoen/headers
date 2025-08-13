@@ -157,7 +157,7 @@ bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_
     return result == ERROR_SUCCESS;
 }
 
-#else //linux
+#elif defined(__linux__) // linux
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -301,6 +301,8 @@ bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_
     return false;
 }
 
-#endif //windows/linux
+#else
+#error Unsupported platform!
+#endif
 
 #endif //GAMEPAD_IMPL
