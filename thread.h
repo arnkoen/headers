@@ -22,6 +22,10 @@ extern "C" {
 
 #include <stdint.h>
 
+#if !defined(__unix__) && !defined(_WIN32)
+#error "thread.h: Unsupported platform!"
+#endif
+
 #ifdef _WIN32
 typedef HANDLE mt_thread;
 typedef CRITICAL_SECTION mt_mutex;
