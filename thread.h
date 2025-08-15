@@ -11,9 +11,11 @@ THIS SOFTWARE IS PROVIDED 'AS-IS', WITHOUT ANY EXPRESS OR IMPLIED WARRANTY. IN N
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#else
+#elif defined(__unix__)
 #include <pthread.h>
 #include <unistd.h>
+#else
+#error "thread.h: Unsupported platform!"
 #endif
 
 #ifdef __cplusplus
@@ -21,10 +23,6 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-
-#if !defined(__unix__) && !defined(_WIN32)
-#error "thread.h: Unsupported platform!"
-#endif
 
 #ifdef _WIN32
 typedef HANDLE mt_thread;
