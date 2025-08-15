@@ -12,11 +12,9 @@ THIS SOFTWARE IS PROVIDED 'AS-IS', WITHOUT ANY EXPRESS OR IMPLIED WARRANTY. IN N
 #include <stddef.h> //size_t
 #include <stdalign.h>
 
-#ifndef ARENA_MALLOC
+#if !defined(ARENA_MALLOC) || !defined(ARENA_FREE)
 #include <stdlib.h>
 #define ARENA_MALLOC(size) malloc(size)
-#endif
-#ifndef ARENA_FREE
 #define ARENA_FREE(ptr) free(ptr)
 #endif
 

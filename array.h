@@ -20,16 +20,9 @@ array_free(&arr);
 extern "C" {
 #endif
 
-#ifndef ARRAY_MALLOC
-#include <stdlib.h>
-#define ARRAY_MALLOC(sz) malloc(sz)
-#endif
-#ifndef ARRAY_REALLOC
+#if !defined(ARRAY_REALLOC) || !defined(ARRAY_FREE)
 #include <stdlib.h>
 #define ARRAY_REALLOC(ptr,sz) realloc(ptr,sz)
-#endif
-#ifndef ARRAY_FREE
-#include <stdlib.h>
 #define ARRAY_FREE(ptr) free(ptr)
 #endif
 

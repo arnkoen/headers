@@ -16,11 +16,9 @@ IN NO EVENT WILL THE AUTHORS BE HELD LIABLE FOR ANY DAMAGES ARISING FROM THE USE
 #include <stddef.h> // size_t
 #include <stdint.h>
 
-#ifndef MEMPOOL_MALLOC
+#if !defined(MEMPOOL_MALLOC) || !defined(MEMPOOL_FREE)
 #include <stdlib.h>
 #define MEMPOOL_MALLOC(sz) malloc(sz)
-#endif
-#ifndef MEMPOOL_FREE
 #define MEMPOOL_FREE(ptr) free(ptr)
 #endif
 

@@ -14,11 +14,9 @@ IN NO EVENT WILL THE AUTHORS BE HELD LIABLE FOR ANY DAMAGES ARISING FROM THE USE
 #include <stddef.h>
 #include <stdint.h>
 
-#ifndef HASHMAP_MALLOC
+#if !defined(HASHMAP_MALLOC) || !defined(HASHMAP_FREE)
 #include <stdlib.h>
 #define HASHMAP_MALLOC(sz) malloc(sz)
-#endif
-#ifndef HASHMAP_FREE
 #define HASHMAP_FREE(ptr) free(ptr)
 #endif
 
