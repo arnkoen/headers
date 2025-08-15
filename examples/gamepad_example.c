@@ -3,21 +3,23 @@
 #include <stdio.h>
 
 int main(void) {
-    gp_context* ctx = gp_create();
-    gp_set_deadzone(ctx, 0.15f); //0.1 by default
+    gp_context ctx = {0};
+    gp_init(&ctx);
+
+    gp_set_deadzone(&ctx, 0.15f); //0.1 by default
 
     while (1) {
-        gp_update(ctx);
+        gp_update(&ctx);
 
         for (int i = 0; i < GP_MAX_GAMEPADS; ++i) {
-            const gp_state* state = gp_get_state(ctx, i);
-            if (state && state->connected) {
-                printf("Pad %d: X=%.2f Y=%.2f A=%d\n", i, state->axes[0], state->axes[1], state->buttons[0]);
+            const gp_state state = ctx.states[i]; //You could also use gp_get_state().
+            if (state.connected) {
+                printf("Pad %d: X=%.2f Y=%.2f A=%d\n", i, state.axes[0], state.axes[1], state.buttons[0]);
 
-                if (state->buttons[0]) {
-                    gp_set_vibration(ctx, i, 1.0f, 1.0f);
+                if (state.buttons[0]) {
+                    gp_set_vibration(&ctx, i, 1.0f, 1.0f);
                 } else {
-                    gp_set_vibration(ctx, i, 0.0f, 0.0f);
+                    gp_set_vibration(&ctx, i, 0.0f, 0.0f);
                 }
             }
         }
@@ -28,6 +30,6 @@ int main(void) {
 #endif
     }
 
-    gp_destroy(ctx);
+    gp_release(&ctx);
     return 0;
 }

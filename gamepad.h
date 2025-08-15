@@ -15,8 +15,6 @@ Since controllers do not have a common layout you might have to create mapping l
 You can find many layouts here: https://github.com/mdqinc/SDL_GameControllerDB,
 but it is up to you, to implement it.
 */
-
-
 #ifndef GAMEPAD_H
 #define GAMEPAD_H
 
@@ -26,11 +24,10 @@ extern "C" {
 
 #include <stdbool.h>
 
+
 #define GP_MAX_GAMEPADS 4
 #define GP_MAX_AXES 8
 #define GP_MAX_BUTTONS 16
-
-typedef struct gp_context gp_context;
 
 typedef struct gp_state {
     float axes[GP_MAX_AXES];
@@ -38,12 +35,34 @@ typedef struct gp_state {
     bool connected;
 } gp_state;
 
-gp_context* gp_create(void);
-void gp_destroy(gp_context* ctx);
+
+#ifdef _WIN32
+
+typedef struct gp_context {
+    gp_state states[GP_MAX_GAMEPADS];
+    float deadzone;
+} gp_context;
+
+#elif defined(__linux__) // linux
+
+typedef struct gp_context {
+    gp_state states[GP_MAX_GAMEPADS];
+    int fds[GP_MAX_GAMEPADS];
+    float deadzone;
+} gp_context;
+
+#else
+#error "gamepad.h: Unsupported platform!"
+#endif
+
+bool gp_init(gp_context* ctx);
+void gp_release(gp_context* ctx);
+
 void gp_update(gp_context* ctx);
 const gp_state* gp_get_state(gp_context* ctx, int index);
 void gp_set_deadzone(gp_context* ctx, float deadzone);
 bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_motor);
+
 
 #ifdef __cplusplus
 }
@@ -58,28 +77,19 @@ bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <Xinput.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #pragma comment(lib, "xinput9_1_0.lib") // Or xinput1_4.lib depending on SDK
 
-struct gp_context {
-    gp_state states[GP_MAX_GAMEPADS];
-    float deadzone;
-};
-
-gp_context* gp_create(void) {
-    gp_context* ctx = (gp_context*)malloc(sizeof(gp_context));
-    if (ctx) {
-        memset(ctx, 0, sizeof(gp_context));
-        ctx->deadzone = 0.1f; // Default deadzone
-    }
-    return ctx;
+bool gp_init(gp_context* ctx) {
+    memset(ctx, 0, sizeof(gp_context));
+    ctx->deadzone = 0.1f; // Default deadzone
+    return true;
 }
 
-void gp_destroy(gp_context* ctx) {
-    free(ctx);
+void gp_release(gp_context* ctx) {
+    (void)ctx;
 }
 
 void gp_set_deadzone(gp_context* ctx, float deadzone) {
@@ -170,11 +180,6 @@ bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_
 #include <sys/ioctl.h>
 #include <stdint.h>
 
-struct gp_context {
-    int fds[GP_MAX_GAMEPADS];
-    gp_state states[GP_MAX_GAMEPADS];
-    float deadzone;
-};
 
 static int is_gamepad(const char* path) {
     int fd = open(path, O_RDONLY | O_NONBLOCK);
@@ -194,15 +199,13 @@ static int is_gamepad(const char* path) {
     return is_gp;
 }
 
-gp_context* gp_create(void) {
-    gp_context* ctx = (gp_context*)malloc(sizeof(gp_context));
-    if (!ctx) return NULL;
+bool gp_init(gp_context* ctx) {
     memset(ctx, 0, sizeof(gp_context));
 
     ctx->deadzone = 0.1f;
 
     DIR* dir = opendir("/dev/input");
-    if (!dir) return ctx;
+    if (!dir) return false;
 
     struct dirent* entry;
     int index = 0;
@@ -223,14 +226,13 @@ gp_context* gp_create(void) {
     }
 
     closedir(dir);
-    return ctx;
+    return true;
 }
 
-void gp_destroy(gp_context* ctx) {
+void gp_release(gp_context* ctx) {
     for (int i = 0; i < GP_MAX_GAMEPADS; ++i) {
         if (ctx->fds[i] > 0) close(ctx->fds[i]);
     }
-    free(ctx);
 }
 
 static float apply_deadzone(float value, float deadzone) {
@@ -301,8 +303,6 @@ bool gp_set_vibration(gp_context* ctx, int index, float left_motor, float right_
     return false;
 }
 
-#else
-#error Unsupported platform!
 #endif
 
 #endif //GAMEPAD_IMPL
