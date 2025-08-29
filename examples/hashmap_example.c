@@ -8,10 +8,10 @@ typedef struct {
 } Value;
 
 int main() {
-    hashmap map = {0};
+    hashmap_t map = {0};
 
     if (!hashmap_init(&map, sizeof(int), sizeof(Value), 16, NULL, NULL)) {
-        printf("Failed to initialize hashmap\n");
+        printf("Failed to initialize hashmap_t\n");
         return 1;
     }
 

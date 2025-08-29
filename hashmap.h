@@ -1,6 +1,6 @@
 
 /*
-Minimal generic hashmap for C (open addressing, linear probing). WIP!
+Minimal generic hashmap_t for C (open addressing, linear probing). WIP!
 
 Copyright (c) 2025, Arne Koenig
 Redistribution and use in source and binary forms, with or without modification, are permitted.
@@ -27,7 +27,7 @@ extern "C" {
 typedef uint32_t (*hashmap_hash_fn)(const void* key, size_t key_size);
 typedef int (*hashmap_eq_fn)(const void* a, const void* b, size_t key_size);
 
-typedef struct hashmap {
+typedef struct hashmap_t {
     void* keys;
     void* values;
     size_t key_size, value_size;
@@ -35,7 +35,7 @@ typedef struct hashmap {
     hashmap_hash_fn hash;
     hashmap_eq_fn eq;
     uint8_t* used;
-} hashmap;
+} hashmap_t;
 
 static inline uint32_t hashmap_default_hash(const void* key, size_t key_size) {
     // FNV-1a, have a look here for more: https://github.com/lcn2/fnv
@@ -52,7 +52,7 @@ static inline int hashmap_default_eq(const void* a, const void* b, size_t key_si
     return 1;
 }
 
-static inline int hashmap_init(hashmap* map, size_t key_size, size_t value_size, size_t capacity, hashmap_hash_fn hash, hashmap_eq_fn eq) {
+static inline int hashmap_init(hashmap_t* map, size_t key_size, size_t value_size, size_t capacity, hashmap_hash_fn hash, hashmap_eq_fn eq) {
     map->key_size = key_size;
     map->value_size = value_size;
     map->capacity = capacity;
@@ -70,7 +70,7 @@ static inline int hashmap_init(hashmap* map, size_t key_size, size_t value_size,
     return 1;
 }
 
-static inline void hashmap_free(hashmap* map) {
+static inline void hashmap_free(hashmap_t* map) {
     HASHMAP_FREE(map->keys);
     HASHMAP_FREE(map->values);
     HASHMAP_FREE(map->used);
@@ -79,7 +79,7 @@ static inline void hashmap_free(hashmap* map) {
     map->capacity = map->count = 0;
 }
 
-static inline int hashmap_insert(hashmap* map, const void* key, const void* value) {
+static inline int hashmap_insert(hashmap_t* map, const void* key, const void* value) {
     uint32_t h = map->hash(key, map->key_size);
     size_t cap = map->capacity;
     for (size_t i = 0; i < cap; ++i) {
@@ -97,7 +97,7 @@ static inline int hashmap_insert(hashmap* map, const void* key, const void* valu
     return 0;
 }
 
-static inline void* hashmap_find(hashmap* map, const void* key) {
+static inline void* hashmap_find(hashmap_t* map, const void* key) {
     uint32_t h = map->hash(key, map->key_size);
     size_t cap = map->capacity;
     for (size_t i = 0; i < cap; ++i) {
@@ -109,7 +109,7 @@ static inline void* hashmap_find(hashmap* map, const void* key) {
     return NULL;
 }
 
-static inline int hashmap_remove(hashmap* map, const void* key) {
+static inline int hashmap_remove(hashmap_t* map, const void* key) {
     uint32_t h = map->hash(key, map->key_size);
     size_t cap = map->capacity;
     for (size_t i = 0; i < cap; ++i) {
