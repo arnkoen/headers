@@ -49,11 +49,10 @@ typedef struct window_t {
     int y;
     int mouse;
     bool fullscreen;
-#if defined(_WIN32)
     bool resized;
+#if defined(_WIN32)
     HWND win;
 #elif defined(__linux__)
-    bool resized;
     Display *dpy;
     Window win;
 #endif
