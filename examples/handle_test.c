@@ -19,8 +19,8 @@ void test_create_basic() {
 
     hp_handle h0 = hp_create_handle(&pool);
     hp_handle h1 = hp_create_handle(&pool);
-    assert(h0 != INVALID_HANDLE);
-    assert(h1 != INVALID_HANDLE);
+    assert(h0 != HP_INVALID_HANDLE);
+    assert(h1 != HP_INVALID_HANDLE);
     assert(hp_index(h0) == 0);
     assert(hp_index(h1) == 1);
     assert(_handle_gen(h0) == 1);
@@ -39,7 +39,7 @@ void test_release_and_reuse() {
     assert(hp_valid_handle(&pool, h));
 
     hp_release_handle(&pool, &h);
-    assert(h == INVALID_HANDLE);
+    assert(h == HP_INVALID_HANDLE);
 
     hp_handle h2 = hp_create_handle(&pool);
     assert(hp_index(h2) == idx);
@@ -74,7 +74,7 @@ void test_pool_full() {
     assert(hp_is_full(&pool));
 
     hp_handle h2 = hp_create_handle(&pool);
-    assert(h2 == INVALID_HANDLE);
+    assert(h2 == HP_INVALID_HANDLE);
 
     hp_destroy(&pool);
 }

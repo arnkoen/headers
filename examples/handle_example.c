@@ -10,7 +10,7 @@ typedef struct {
 // Creates an image in the pool, initializes its fields, and returns its handle
 hp_handle create_image(hp_pool* pool, image imgs[], int id, int width, int height) {
     hp_handle h = hp_create_handle(pool);
-    if (h == INVALID_HANDLE) return INVALID_HANDLE;
+    if (h == HP_INVALID_HANDLE) return HP_INVALID_HANDLE;
 
     image* img = &imgs[hp_index(h)];
     img->id = id;
@@ -39,7 +39,7 @@ int main() {
 
     // Create and initialize the first image
     hp_handle h0 = create_image(&pool, imgs, 0, 800, 600);
-    if (h0 == INVALID_HANDLE) {
+    if (h0 == HP_INVALID_HANDLE) {
         fprintf(stderr, "Failed to create first image handle\n");
         return 1;
     }
@@ -49,11 +49,11 @@ int main() {
 
     // Release the first image
     release_image(&pool, &h0);
-    printf("After release, h0 = %u (should be INVALID_HANDLE)\n", h0);
+    printf("After release, h0 = %u (should be HP_INVALID_HANDLE)\n", h0);
 
     // Create a second image using the same slot
     hp_handle h1 = create_image(&pool, imgs, 1, 1280, 720);
-    if (h1 == INVALID_HANDLE) {
+    if (h1 == HP_INVALID_HANDLE) {
         fprintf(stderr, "Failed to create second image handle\n");
         hp_destroy(&pool);
         return 1;
