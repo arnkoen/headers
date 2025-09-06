@@ -50,8 +50,10 @@ typedef struct window_t {
     int mouse;
     bool fullscreen;
 #if defined(_WIN32)
+    bool resized;
     HWND win;
 #elif defined(__linux__)
+    bool resized;
     Display *dpy;
     Window win;
 #endif
@@ -69,6 +71,8 @@ WINDOW_FN bool window_key_released(window_t *w, int key);
 
 WINDOW_FN void window_sleep(int64_t ms);
 WINDOW_FN int64_t window_time(void);
+
+WINDOW_FN bool window_resized(window_t *w);
 
 #endif //WINDOW_HEADER
 
@@ -102,6 +106,7 @@ static LRESULT CALLBACK window_wndproc(HWND win, UINT msg, WPARAM wParam, LPARAM
     case WM_SIZE:
         w->width = LOWORD(lParam);
         w->height = HIWORD(lParam);
+        w->resized = true;
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -133,6 +138,7 @@ bool window_open(window_t* w, const window_desc_t* desc) {
     w->width = desc->width;
     w->height = desc->height;
     w->title = desc->title;
+    w->resized = false;
     return true;
 }
 
@@ -162,6 +168,14 @@ bool window_key_released(window_t *w, int key) {
     bool released = !w->keys[key] && w->prev_keys[key];
     w->prev_keys[key] = w->keys[key];
     return released;
+}
+
+bool window_resized(window_t *w) {
+    if (w->resized) {
+        w->resized = false;
+        return true;
+    }
+    return false;
 }
 
 void window_toggle_fullscreen(window_t *w) {
@@ -224,6 +238,7 @@ bool window_open(window_t* w, const window_desc_t* desc) {
     XSetWMProtocols(w->dpy, w->win, &wm_delete, 1);
     XMapWindow(w->dpy, w->win);
     XSync(w->dpy, w->win);
+    w->resized = false;
     return true;
 }
 
@@ -235,6 +250,11 @@ bool window_loop(window_t* w) {
     while (XPending(w->dpy)) {
         XNextEvent(w->dpy, &ev);
         switch (ev.type) {
+        case ConfigureNotify:
+            w->width = ev.xconfigure.width;
+            w->height = ev.xconfigure.height;
+            w->resized = true;
+            break;
         case ButtonPress:
         case ButtonRelease:
             w->mouse = (ev.type == ButtonPress);
@@ -300,6 +320,14 @@ bool window_key_released(window_t *w, int key) {
     bool released = !w->keys[key] && w->prev_keys[key];
     w->prev_keys[key] = w->keys[key];
     return released;
+}
+
+bool window_resized(window_t *w) {
+    if (w->resized) {
+        w->resized = false;
+        return true;
+    }
+    return false;
 }
 
 void window_sleep(int64_t ms) {
