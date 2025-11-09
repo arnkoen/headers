@@ -205,7 +205,7 @@ void window_toggle_fullscreen(window_t *w) {
     }
 }
 
-void window_sleep(int64_t ms) { Sleep(ms); }
+void window_sleep(int64_t ms) { Sleep((DWORD)ms); }
 
 int64_t window_time() {
     LARGE_INTEGER freq, count;
@@ -229,7 +229,7 @@ bool window_open(window_t* w, const window_desc_t* desc) {
     );
     XSelectInput(w->dpy, w->win,
                 ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask |
-                    ButtonReleaseMask | PointerMotionMask);
+                    ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
     XStoreName(w->dpy, w->win, desc->title);
     w->title = desc->title;
     // Setup WM_DELETE_WINDOW protocol
