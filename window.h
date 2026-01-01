@@ -4,7 +4,7 @@
 This is very much a work in progress and might be buggy.
 It does not create any kind of graphics context, also it has no buffer for rendering stuff.
 It really just opens a window, the rest is up to you.
-It should work on Windows and Linux (link against X11).
+It should work on Windows, Linux (link against X11), and macOS (link against Cocoa: -framework Cocoa).
 */
 
 #ifndef WINDOW_HEADER
@@ -14,7 +14,12 @@ It should work on Windows and Linux (link against X11).
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #pragma comment(lib, "user32.lib")
-#elif defined __linux__
+#elif defined(__APPLE__)
+#include <CoreGraphics/CoreGraphics.h>
+#include <objc/NSObjCRuntime.h>
+#include <objc/objc-runtime.h>
+#include <time.h>
+#elif defined(__linux__)
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -52,6 +57,8 @@ typedef struct window_t {
     bool resized;
 #if defined(_WIN32)
     HWND win;
+#elif defined(__APPLE__)
+    id wnd;
 #elif defined(__linux__)
     Display *dpy;
     Window win;
@@ -214,7 +221,167 @@ int64_t window_time() {
     return (int64_t)(count.QuadPart * 1000.0 / freq.QuadPart);
 }
 
-#else
+#elif defined(__APPLE__)
+
+#define msg(r, o, s) ((r(*)(id, SEL))objc_msgSend)(o, sel_getUid(s))
+#define msg1(r, o, s, A, a) \
+  ((r(*)(id, SEL, A))objc_msgSend)(o, sel_getUid(s), a)
+#define msg2(r, o, s, A, a, B, b) \
+  ((r(*)(id, SEL, A, B))objc_msgSend)(o, sel_getUid(s), a, b)
+#define msg3(r, o, s, A, a, B, b, C, c) \
+  ((r(*)(id, SEL, A, B, C))objc_msgSend)(o, sel_getUid(s), a, b, c)
+#define msg4(r, o, s, A, a, B, b, C, c, D, d) \
+  ((r(*)(id, SEL, A, B, C, D))objc_msgSend)(o, sel_getUid(s), a, b, c, d)
+
+#define cls(x) ((id)objc_getClass(x))
+
+extern id const NSDefaultRunLoopMode;
+extern id const NSApp;
+
+static const uint8_t FENSTER_KEYCODES[] = {65,83,68,70,72,71,90,88,67,86,0,66,
+81,87,69,82,89,84,49,50,51,52,54,53,61,57,55,45,56,48,93,79,85,91,73,80,10,76,
+74,39,75,59,92,44,47,78,77,46,9,32,96,8,0,27,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,26,2,3,127,0,5,0,4,0,20,19,18,17};
+
+static BOOL window_should_close(id v, SEL s, id w) {
+    (void)v, (void)s, (void)w;
+    msg1(void, NSApp, "terminate:", id, NSApp);
+    return YES;
+}
+
+static void window_did_resize(id v, SEL s, id notification) {
+    (void)s;
+    id win = msg(id, notification, "object");
+    window_t *w = (window_t *)objc_getAssociatedObject(v, "window");
+    if (w) {
+        CGRect frame = msg(CGRect, msg(id, win, "contentView"), "frame");
+        w->width = (int)frame.size.width;
+        w->height = (int)frame.size.height;
+        w->resized = true;
+    }
+}
+
+bool window_open(window_t* w, const window_desc_t* desc) {
+    msg(id, cls("NSApplication"), "sharedApplication");
+    msg1(void, NSApp, "setActivationPolicy:", NSInteger, 0);
+    w->wnd = msg4(id, msg(id, cls("NSWindow"), "alloc"),
+                  "initWithContentRect:styleMask:backing:defer:", CGRect,
+                  CGRectMake(0, 0, desc->width, desc->height), NSUInteger, 15,
+                  NSUInteger, 2, BOOL, NO);
+    Class windelegate =
+        objc_allocateClassPair((Class)cls("NSObject"), "WindowDelegate", 0);
+    class_addMethod(windelegate, sel_getUid("windowShouldClose:"),
+                    (IMP)window_should_close, "c@:@");
+    class_addMethod(windelegate, sel_getUid("windowDidResize:"),
+                    (IMP)window_did_resize, "v@:@");
+    objc_registerClassPair(windelegate);
+    id delegate = msg(id, msg(id, (id)windelegate, "alloc"), "init");
+    objc_setAssociatedObject(delegate, "window", (id)w, OBJC_ASSOCIATION_ASSIGN);
+    msg1(void, w->wnd, "setDelegate:", id, delegate);
+
+    id title = msg1(id, cls("NSString"), "stringWithUTF8String:", const char *,
+                    desc->title);
+    msg1(void, w->wnd, "setTitle:", id, title);
+
+    // Enable fullscreen support (NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128)
+    msg1(void, w->wnd, "setCollectionBehavior:", NSUInteger, 128);
+
+    msg1(void, w->wnd, "makeKeyAndOrderFront:", id, nil);
+    msg(void, w->wnd, "center");
+    msg1(void, NSApp, "activateIgnoringOtherApps:", BOOL, YES);
+
+    w->width = desc->width;
+    w->height = desc->height;
+    w->title = desc->title;
+    w->resized = false;
+    w->fullscreen = false;
+    return true;
+}
+
+void window_close(window_t* w) {
+    msg(void, w->wnd, "close");
+}
+
+bool window_loop(window_t* w) {
+    id ev = msg4(id, NSApp,
+                 "nextEventMatchingMask:untilDate:inMode:dequeue:", NSUInteger,
+                 NSUIntegerMax, id, NULL, id, NSDefaultRunLoopMode, BOOL, YES);
+    if (!ev)
+        return true;
+    NSUInteger evtype = msg(NSUInteger, ev, "type");
+    switch (evtype) {
+    case 1: /* NSEventTypeMouseDown */
+        w->mouse |= 1;
+        break;
+    case 2: /* NSEventTypeMouseUp*/
+        w->mouse &= ~1;
+        break;
+    case 5:
+    case 6: { /* NSEventTypeMouseMoved */
+        CGPoint xy = msg(CGPoint, ev, "locationInWindow");
+        w->x = (int)xy.x;
+        w->y = (int)(w->height - xy.y);
+        break;
+    }
+    case 10: /*NSEventTypeKeyDown*/
+    case 11: /*NSEventTypeKeyUp:*/ {
+        NSUInteger k = msg(NSUInteger, ev, "keyCode");
+        if (k < sizeof(FENSTER_KEYCODES)) {
+            w->keys[FENSTER_KEYCODES[k]] = evtype == 10;
+        }
+        NSUInteger mod = msg(NSUInteger, ev, "modifierFlags") >> 17;
+        w->mod = (mod & 0xc) | ((mod & 1) << 1) | ((mod >> 1) & 1);
+        break;
+    }
+    }
+    msg1(void, NSApp, "sendEvent:", id, ev);
+    return true;
+}
+
+bool window_key_down(window_t *w, int key) {
+    return w->keys[key] != 0;
+}
+
+bool window_key_pressed(window_t *w, int key) {
+    bool pressed = w->keys[key] && !w->prev_keys[key];
+    w->prev_keys[key] = w->keys[key];
+    return pressed;
+}
+
+bool window_key_released(window_t *w, int key) {
+    bool released = !w->keys[key] && w->prev_keys[key];
+    w->prev_keys[key] = w->keys[key];
+    return released;
+}
+
+bool window_resized(window_t *w) {
+    if (w->resized) {
+        w->resized = false;
+        return true;
+    }
+    return false;
+}
+
+void window_toggle_fullscreen(window_t *w) {
+    msg1(void, w->wnd, "toggleFullScreen:", id, nil);
+    w->fullscreen = !w->fullscreen;
+}
+
+void window_sleep(int64_t ms) {
+    struct timespec ts;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+}
+
+int64_t window_time(void) {
+    struct timespec time;
+    clock_gettime(CLOCK_REALTIME, &time);
+    return time.tv_sec * 1000 + (time.tv_nsec / 1000000);
+}
+
+#elif defined(__linux__)
 
 static int FENSTER_KEYCODES[124] = {XK_BackSpace,8,XK_Delete,127,XK_Down,18,XK_End,5,XK_Escape,27,XK_Home,2,XK_Insert,26,XK_Left,20,XK_Page_Down,4,XK_Page_Up,3,XK_Return,10,XK_Right,19,XK_Tab,9,XK_Up,17,XK_apostrophe,39,XK_backslash,92,XK_bracketleft,91,XK_bracketright,93,XK_comma,44,XK_equal,61,XK_grave,96,XK_minus,45,XK_period,46,XK_semicolon,59,XK_slash,47,XK_space,32,XK_a,65,XK_b,66,XK_c,67,XK_d,68,XK_e,69,XK_f,70,XK_g,71,XK_h,72,XK_i,73,XK_j,74,XK_k,75,XK_l,76,XK_m,77,XK_n,78,XK_o,79,XK_p,80,XK_q,81,XK_r,82,XK_s,83,XK_t,84,XK_u,85,XK_v,86,XK_w,87,XK_x,88,XK_y,89,XK_z,90,XK_0,48,XK_1,49,XK_2,50,XK_3,51,XK_4,52,XK_5,53,XK_6,54,XK_7,55,XK_8,56,XK_9,57};
 
