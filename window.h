@@ -151,6 +151,7 @@ bool window_open(window_t* w, const window_desc_t* desc) {
 void window_close(window_t *w) { (void)w; }
 
 bool window_loop(window_t *w) {
+    (void)w;
     MSG msg;
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) return false;
@@ -192,7 +193,7 @@ void window_toggle_fullscreen(window_t *w) {
         GetWindowRect(hwnd, &saved_rect);
         // Remove window borders and set fullscreen
         SetWindowLong(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        MONITORINFO mi = { sizeof(mi) };
+        MONITORINFO mi = {0};
         GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi);
         SetWindowPos(hwnd, HWND_TOP,
             mi.rcMonitor.left, mi.rcMonitor.top,
@@ -510,4 +511,3 @@ int64_t window_time(void) {
 #endif
 
 #endif //WINDOW_IMPL
-
