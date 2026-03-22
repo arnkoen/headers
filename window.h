@@ -191,24 +191,26 @@ void window_toggle_fullscreen(window_t *w) {
     if (!w->fullscreen) {
         // Save current window position and size
         GetWindowRect(hwnd, &saved_rect);
-        // Remove window borders and set fullscreen
-        SetWindowLong(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        MONITORINFO mi = {0};
+        // Remove window borders and extended styles, then go fullscreen
+        SetWindowLong(hwnd, GWL_STYLE,   WS_POPUP | WS_VISIBLE);
+        SetWindowLong(hwnd, GWL_EXSTYLE, 0);
+        MONITORINFO mi = { sizeof(mi) };
         GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi);
         SetWindowPos(hwnd, HWND_TOP,
             mi.rcMonitor.left, mi.rcMonitor.top,
             mi.rcMonitor.right - mi.rcMonitor.left,
             mi.rcMonitor.bottom - mi.rcMonitor.top,
-            SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         w->fullscreen = true;
     } else {
         // Restore window borders and position
-        SetWindowLong(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+        SetWindowLong(hwnd, GWL_STYLE,   WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+        SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_CLIENTEDGE);
         SetWindowPos(hwnd, HWND_NOTOPMOST,
             saved_rect.left, saved_rect.top,
             saved_rect.right - saved_rect.left,
             saved_rect.bottom - saved_rect.top,
-            SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         w->fullscreen = false;
     }
 }
